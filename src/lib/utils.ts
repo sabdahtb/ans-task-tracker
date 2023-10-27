@@ -13,8 +13,8 @@ export function absoluteUrl(path: string) {
 }
 
 export function constructMetadata({
-  title = 'Next TRPC',
-  description = 'Next TRPC Learning',
+  title = 'Task Tracker',
+  description = 'Task Tracker',
   image = '/next.svg',
   icons = '/favicon.ico',
   noIndex = false,

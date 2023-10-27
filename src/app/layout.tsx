@@ -2,6 +2,7 @@ import './globals.css'
 import { Inter } from 'next/font/google'
 
 import Navbar from '~/components/navbar'
+import Footer from '~/components/footer'
 import { cn, constructMetadata } from '~/lib/utils'
 import { TRPCProviders, ThemeProvider } from '~/components/providers'
 
@@ -25,8 +26,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TRPCProviders>
-            <Navbar />
-            {children}
+            <main className="layout-container">
+              <Navbar />
+              {children}
+              <Footer />
+            </main>
           </TRPCProviders>
         </ThemeProvider>
       </body>
