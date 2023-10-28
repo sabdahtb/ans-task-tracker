@@ -1,13 +1,19 @@
 import './globals.css'
+import dynamic from 'next/dynamic'
 import { Inter } from 'next/font/google'
 
-import Navbar from '~/components/navbar'
 import Footer from '~/components/footer'
 import { cn, constructMetadata } from '~/lib/utils'
-import { TRPCProviders, ThemeProvider } from '~/components/providers'
+import LoadingNavbar from '~/components/loading-navbar'
+import { ThemeProvider, TRPCProviders } from '~/components/providers'
 
 const inter = Inter({ subsets: ['latin'] })
 export const metadata = constructMetadata()
+
+const Navbar = dynamic(() => import('~/components/navbar'), {
+  ssr: false,
+  loading: LoadingNavbar,
+})
 
 export default function RootLayout({
   children,

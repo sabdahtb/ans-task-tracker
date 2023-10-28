@@ -1,73 +1,51 @@
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from 'firebase/auth'
 import { z } from 'zod'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 
-import { auth, db } from '~/lib/firebase'
+import { IUser } from '~/lib/types'
+import { db } from '~/lib/firebase'
 import { router, publicProcedure } from './trpc'
-
-interface User {
-  uid: string
-  email: string
-  username: string
-  photoURL?: string
-  createdAt?: string
-  updatedAt?: string
-}
 
 export const authRouter = router({
   signup: publicProcedure
     .input(
       z.object({
+        uid: z.string(),
         username: z.string(),
-        password: z.string(),
         email: z.string().email(),
-        confirmPassword: z.string(),
       })
     )
-    .mutation(async ({ input: { username, email, password } }) => {
+    .mutation(async ({ input: { username, email, uid } }) => {
       try {
-        const response = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        )
-
-        const userPayload: User = {
+        const userPayload: IUser = {
           email,
           username,
           photoURL: '',
-          uid: response.user.uid,
+          uid: uid,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         }
 
-        const docRef = doc(db, 'user', response.user.uid)
+        const docRef = doc(db, 'user', uid)
         await setDoc(docRef, userPayload)
 
-        return { message: 'Success create account' }
+        return userPayload
       } catch (error) {
         return error
       }
     }),
-  signin: publicProcedure
+  user: publicProcedure
     .input(
       z.object({
-        password: z.string(),
-        email: z.string().email(),
+        uid: z.string(),
       })
     )
-    .mutation(async ({ input: { email, password } }) => {
+    .mutation(async ({ input: { uid } }) => {
       try {
-        const response = await signInWithEmailAndPassword(auth, email, password)
-
-        const docRef = doc(db, 'user', response.user.uid)
+        const docRef = doc(db, 'user', uid)
         const docSnap = await getDoc(docRef)
         const data = docSnap.data()
 
-        return data
+        return data as IUser
       } catch (error) {
         return error
       }

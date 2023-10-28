@@ -3,7 +3,9 @@
 import * as z from 'zod'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
+import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
 
 import {
   Form,
@@ -21,7 +23,10 @@ import {
   CardContent,
   CardDescription,
 } from '~/components/ui/card'
+import { IUser } from '~/lib/types'
+import { auth } from '~/lib/firebase'
 import { trpc } from '../_trpc/client'
+import { useAuthStore } from '~/lib/stores'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 
@@ -49,26 +54,35 @@ const formSchema = z
   )
 
 export default function Page() {
+  const router = useRouter()
   const signUp = trpc.auth.signup.useMutation()
+  const { setUser } = useAuthStore()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
       password: '',
+      username: '',
       confirmPassword: '',
     },
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const response = await signUp.mutateAsync({
+    const response = await createUserWithEmailAndPassword(
+      auth,
+      values.email,
+      values.password
+    )
+
+    const data = await signUp.mutateAsync({
       email: values.email,
+      uid: response.user.uid,
       username: values.username,
-      password: values.password,
-      confirmPassword: values.password,
     })
 
-    console.log(response)
+    setUser(data as IUser)
+    router.push('/main')
   }
 
   return (
@@ -137,8 +151,12 @@ export default function Page() {
               />
             </CardContent>
             <CardFooter>
-              <Button type="submit" className="w-full">
-                Create account
+              <Button
+                disabled={signUp.isLoading}
+                type="submit"
+                className="w-full"
+              >
+                {signUp.isLoading ? 'Loading...' : 'Create account'}
               </Button>
             </CardFooter>
           </form>
@@ -147,7 +165,7 @@ export default function Page() {
       <p className="mt-3 text-center text-xs">
         Already have an account?{' '}
         <Link className="text-primary" href={'/sign-in'}>
-          Login
+          Log in
         </Link>
       </p>
     </div>

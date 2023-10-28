@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 
 import {
   Form,
@@ -22,7 +23,10 @@ import {
   CardContent,
   CardDescription,
 } from '~/components/ui/card'
+import { IUser } from '~/lib/types'
+import { auth } from '~/lib/firebase'
 import { trpc } from '../_trpc/client'
+import { useAuthStore } from '~/lib/stores'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 
@@ -33,7 +37,9 @@ const formSchema = z.object({
 
 export default function Page() {
   const router = useRouter()
-  const signIn = trpc.auth.signin.useMutation()
+  const { setUser } = useAuthStore()
+  const getUser = trpc.auth.user.useMutation()
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -43,12 +49,18 @@ export default function Page() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    await signIn.mutateAsync({
-      email: values.email,
-      password: values.password,
+    const response = await signInWithEmailAndPassword(
+      auth,
+      values.email,
+      values.password
+    )
+
+    const data = await getUser.mutateAsync({
+      uid: response.user.uid ?? '',
     })
 
-    router.push('/')
+    setUser(data as IUser)
+    router.push('/main')
   }
 
   return (
@@ -91,8 +103,12 @@ export default function Page() {
               />
             </CardContent>
             <CardFooter>
-              <Button type="submit" className="w-full">
-                Log In
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={getUser.isLoading}
+              >
+                {getUser.isLoading ? 'Loading...' : 'Log In'}
               </Button>
             </CardFooter>
           </form>
@@ -101,7 +117,7 @@ export default function Page() {
       <p className="mt-3 text-center text-xs">
         Dont have account?{' '}
         <Link className="text-primary" href={'/sign-up'}>
-          Log In
+          Create account
         </Link>
       </p>
     </div>
