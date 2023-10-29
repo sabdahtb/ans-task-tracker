@@ -3,8 +3,10 @@
 import * as z from 'zod'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
+import { Eye, EyeOff } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { HTMLInputTypeAttribute, useState } from 'react'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 
 import {
@@ -39,6 +41,9 @@ export default function Page() {
   const router = useRouter()
   const { setUser } = useAuthStore()
   const getUser = trpc.auth.user.useMutation()
+
+  const [passwordType, setPasswordType] =
+    useState<HTMLInputTypeAttribute>('password')
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -95,7 +100,30 @@ export default function Page() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <div className="relative">
+                        <Input type={passwordType} {...field} />
+                        <div className="absolute right-0 top-0 flex h-full items-center">
+                          <Button
+                            type="button"
+                            name="_password"
+                            aria-label="_password"
+                            variant="link"
+                            onClick={() =>
+                              setPasswordType(
+                                passwordType === 'password'
+                                  ? 'text'
+                                  : 'password'
+                              )
+                            }
+                          >
+                            {passwordType === 'password' ? (
+                              <Eye className="cursor-pointer text-secondary-foreground" />
+                            ) : (
+                              <EyeOff className="cursor-pointer text-secondary-foreground" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
